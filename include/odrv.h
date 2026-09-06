@@ -6,10 +6,17 @@
 #define ODRV_MAGIC 0x5652444Fu /* 'ODRV' little-endian */
 #define ODRV_FORMAT_VERSION 1
 
+/*
+ * ODRV architecture IDs are package-format IDs and remain stable forever.
+ * They are intentionally independent from ODI_ARCH_* runtime IDs.
+ */
 #define ODRV_ARCH_X86_64 1
 #define ODRV_ARCH_AARCH64 2
+#define ODRV_ARCH_I686 3
+#define ODRV_ARCH_RISCV64 4
 
 #define ODRV_PAYLOAD_ELF64 1
+#define ODRV_PAYLOAD_ELF32 2
 
 #pragma pack(push,1)
 typedef struct {
