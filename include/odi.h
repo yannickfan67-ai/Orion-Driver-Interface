@@ -21,16 +21,17 @@
 #define ODI_ARCH_RISCV64 4u
 #define ODI_ARCH_BIT(arch) (1ull << (arch))
 
-#define ODI_KERNEL_CAP_PIO          (1ull << 0)
-#define ODI_KERNEL_CAP_MMIO         (1ull << 1)
-#define ODI_KERNEL_CAP_PCI_CONFIG   (1ull << 2)
-#define ODI_KERNEL_CAP_IRQ          (1ull << 3)
-#define ODI_KERNEL_CAP_DMA          (1ull << 4)
-#define ODI_KERNEL_CAP_ISA          (1ull << 5)
-#define ODI_KERNEL_CAP_USB          (1ull << 6)
-#define ODI_KERNEL_CAP_ACPI         (1ull << 7)
-#define ODI_KERNEL_CAP_MSI          (1ull << 8)
-#define ODI_KERNEL_CAP_DMA64        (1ull << 9)
+#define ODI_KERNEL_CAP_PIO              (1ull << 0)
+#define ODI_KERNEL_CAP_MMIO             (1ull << 1)
+#define ODI_KERNEL_CAP_PCI_CONFIG       (1ull << 2)
+#define ODI_KERNEL_CAP_IRQ              (1ull << 3)
+#define ODI_KERNEL_CAP_DMA              (1ull << 4)
+#define ODI_KERNEL_CAP_ISA              (1ull << 5)
+#define ODI_KERNEL_CAP_USB              (1ull << 6)
+#define ODI_KERNEL_CAP_ACPI             (1ull << 7)
+#define ODI_KERNEL_CAP_MSI              (1ull << 8)
+#define ODI_KERNEL_CAP_DMA64            (1ull << 9)
+#define ODI_KERNEL_CAP_SERVICE_REGISTRY (1ull << 10)
 
 typedef enum {
     ODI_BUS_NONE = 0,
@@ -151,7 +152,11 @@ typedef struct odi_kernel_api {
     uint64_t capabilities;
     uint32_t architecture;
     uint32_t page_size;
-    void *reserved[8];
+
+    /* These consume two ABI-1.1 reserved pointer slots. */
+    int (*service_publish)(uint32_t driver_class,const void *ops,uint32_t ops_size,void *context,uint64_t *service_id);
+    void (*service_remove)(uint64_t service_id);
+    void *reserved[6];
 } odi_kernel_api;
 
 typedef struct odi_driver_descriptor {
@@ -169,7 +174,6 @@ typedef struct odi_driver_descriptor {
     void (*stop)(const odi_kernel_api *api, void *driver_context);
     void (*detach)(const odi_kernel_api *api, void *driver_context);
 
-    /* ABI 1.1 append-only compatibility declaration. */
     uint64_t required_kernel_capabilities;
     uint64_t supported_architectures;
     void *reserved[4];
