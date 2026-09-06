@@ -5,7 +5,7 @@
 #include <stddef.h>
 
 #define ODI_ABI_MAJOR 1
-#define ODI_ABI_MINOR 0
+#define ODI_ABI_MINOR 1
 
 #define ODI_OK 0
 #define ODI_ENODEV (-1)
@@ -15,11 +15,32 @@
 #define ODI_EBUSY (-5)
 #define ODI_ENOTSUP (-6)
 
+#define ODI_ARCH_I686    1u
+#define ODI_ARCH_X86_64  2u
+#define ODI_ARCH_AARCH64 3u
+#define ODI_ARCH_RISCV64 4u
+#define ODI_ARCH_BIT(arch) (1ull << (arch))
+
+#define ODI_KERNEL_CAP_PIO          (1ull << 0)
+#define ODI_KERNEL_CAP_MMIO         (1ull << 1)
+#define ODI_KERNEL_CAP_PCI_CONFIG   (1ull << 2)
+#define ODI_KERNEL_CAP_IRQ          (1ull << 3)
+#define ODI_KERNEL_CAP_DMA          (1ull << 4)
+#define ODI_KERNEL_CAP_ISA          (1ull << 5)
+#define ODI_KERNEL_CAP_USB          (1ull << 6)
+#define ODI_KERNEL_CAP_ACPI         (1ull << 7)
+#define ODI_KERNEL_CAP_MSI          (1ull << 8)
+#define ODI_KERNEL_CAP_DMA64        (1ull << 9)
+
 typedef enum {
     ODI_BUS_NONE = 0,
     ODI_BUS_PCI = 1,
     ODI_BUS_PLATFORM = 2,
-    ODI_BUS_VIRTIO_PCI = 3
+    ODI_BUS_VIRTIO_PCI = 3,
+    ODI_BUS_ISA = 4,
+    ODI_BUS_USB = 5,
+    ODI_BUS_ACPI = 6,
+    ODI_BUS_PCIE = 7
 } odi_bus_type;
 
 typedef enum {
@@ -31,7 +52,9 @@ typedef enum {
     ODI_CLASS_INPUT = 5,
     ODI_CLASS_AUDIO = 6,
     ODI_CLASS_RNG = 7,
-    ODI_CLASS_PLATFORM = 8
+    ODI_CLASS_PLATFORM = 8,
+    ODI_CLASS_USB = 9,
+    ODI_CLASS_FIRMWARE = 10
 } odi_driver_class;
 
 typedef struct {
@@ -61,10 +84,21 @@ typedef struct {
 } odi_pci_identity;
 
 typedef struct {
+    uint16_t io_base;
+    uint16_t io_size;
+    uint8_t irq;
+    uint8_t dma8;
+    uint8_t dma16;
+    uint8_t reserved;
+    const char *pnp_id;
+} odi_isa_identity;
+
+typedef struct {
     uint32_t bus_type;
     uint32_t reserved;
     union {
         odi_pci_identity pci;
+        odi_isa_identity isa;
         struct {
             const char *name;
             uint64_t resource_base;
@@ -112,6 +146,12 @@ typedef struct odi_kernel_api {
 
     int (*dma_alloc)(uint64_t size, uint64_t align, uint64_t dma_mask, odi_dma_buffer *out);
     void (*dma_free)(odi_dma_buffer *buffer);
+
+    /* ABI 1.1 append-only host description. */
+    uint64_t capabilities;
+    uint32_t architecture;
+    uint32_t page_size;
+    void *reserved[8];
 } odi_kernel_api;
 
 typedef struct odi_driver_descriptor {
@@ -128,8 +168,15 @@ typedef struct odi_driver_descriptor {
     int (*start)(const odi_kernel_api *api, void *driver_context);
     void (*stop)(const odi_kernel_api *api, void *driver_context);
     void (*detach)(const odi_kernel_api *api, void *driver_context);
+
+    /* ABI 1.1 append-only compatibility declaration. */
+    uint64_t required_kernel_capabilities;
+    uint64_t supported_architectures;
+    void *reserved[4];
 } odi_driver_descriptor;
 
+#define ODI_API_HAS(api,member) ((api) && (api)->struct_size >= offsetof(odi_kernel_api,member) + sizeof((api)->member))
+#define ODI_DRIVER_HAS(desc,member) ((desc) && (desc)->struct_size >= offsetof(odi_driver_descriptor,member) + sizeof((desc)->member))
 #define ODI_DRIVER_ENTRY_SYMBOL odi_driver_entry
 const odi_driver_descriptor *odi_driver_entry(void);
 
