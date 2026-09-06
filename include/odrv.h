@@ -28,7 +28,7 @@ typedef struct {
     uint32_t resources_offset;
     uint32_t resources_size;
     uint32_t crc32;
-    uint8_t reserved[76];
+    uint8_t reserved[80];
 } odrv_header_v1;
 #pragma pack(pop)
 
