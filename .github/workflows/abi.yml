@@ -1,0 +1,16 @@
+name: odi-abi
+on: [push, pull_request]
+jobs:
+  headers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile ABI headers
+        run: |
+          cat > /tmp/odi_check.c <<'EOF'
+          #include "include/odi.h"
+          #include "include/odrv.h"
+          int main(void){return sizeof(odrv_header_v1)==128 ? 0 : 1;}
+          EOF
+          cc -std=c11 -Wall -Wextra -Werror -I. /tmp/odi_check.c -o /tmp/odi_check
+          /tmp/odi_check
