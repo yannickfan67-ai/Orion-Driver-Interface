@@ -148,12 +148,9 @@ typedef struct odi_kernel_api {
     int (*dma_alloc)(uint64_t size, uint64_t align, uint64_t dma_mask, odi_dma_buffer *out);
     void (*dma_free)(odi_dma_buffer *buffer);
 
-    /* ABI 1.1 append-only host description. */
     uint64_t capabilities;
     uint32_t architecture;
     uint32_t page_size;
-
-    /* These consume two ABI-1.1 reserved pointer slots. */
     int (*service_publish)(uint32_t driver_class,const void *ops,uint32_t ops_size,void *context,uint64_t *service_id);
     void (*service_remove)(uint64_t service_id);
     void *reserved[6];
@@ -167,20 +164,19 @@ typedef struct odi_driver_descriptor {
     uint32_t flags;
     const char *name;
     const char *version;
-
     int (*probe)(const odi_kernel_api *api, const odi_device *device);
     int (*attach)(const odi_kernel_api *api, const odi_device *device, void **driver_context);
     int (*start)(const odi_kernel_api *api, void *driver_context);
     void (*stop)(const odi_kernel_api *api, void *driver_context);
     void (*detach)(const odi_kernel_api *api, void *driver_context);
-
     uint64_t required_kernel_capabilities;
     uint64_t supported_architectures;
     void *reserved[4];
 } odi_driver_descriptor;
 
-#define ODI_API_HAS(api,member) ((api) && (api)->struct_size >= offsetof(odi_kernel_api,member) + sizeof((api)->member))
-#define ODI_DRIVER_HAS(desc,member) ((desc) && (desc)->struct_size >= offsetof(odi_driver_descriptor,member) + sizeof((desc)->member))
+/* The caller must first establish that api/desc is non-NULL. */
+#define ODI_API_HAS(api,member) ((api)->struct_size >= offsetof(odi_kernel_api,member) + sizeof((api)->member))
+#define ODI_DRIVER_HAS(desc,member) ((desc)->struct_size >= offsetof(odi_driver_descriptor,member) + sizeof((desc)->member))
 #define ODI_DRIVER_ENTRY_SYMBOL odi_driver_entry
 const odi_driver_descriptor *odi_driver_entry(void);
 
