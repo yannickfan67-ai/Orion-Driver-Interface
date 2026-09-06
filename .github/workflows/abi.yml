@@ -5,12 +5,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Compile ABI headers
+      - name: Compile ABI headers and compatibility probes
         run: |
           cat > /tmp/odi_check.c <<'EOF'
+          #include <stddef.h>
           #include "include/odi.h"
           #include "include/odrv.h"
-          int main(void){return sizeof(odrv_header_v1)==128 ? 0 : 1;}
+          typedef struct {
+            uint16_t abi_major,abi_minor;
+            uint32_t struct_size;
+            void (*log)(uint32_t,const char*);
+          } odi_kernel_api_v1_prefix;
+          int main(void){
+            odi_kernel_api api={0};
+            odi_driver_descriptor d={0};
+            if(sizeof(odrv_header_v1)!=128)return 1;
+            if(ODRV_ARCH_X86_64!=1||ODRV_ARCH_AARCH64!=2)return 2;
+            if(offsetof(odi_kernel_api,log)!=offsetof(odi_kernel_api_v1_prefix,log))return 3;
+            api.struct_size=offsetof(odi_kernel_api,capabilities);
+            d.struct_size=offsetof(odi_driver_descriptor,required_kernel_capabilities);
+            if(ODI_API_HAS(&api,capabilities))return 4;
+            if(ODI_DRIVER_HAS(&d,supported_architectures))return 5;
+            return 0;
+          }
           EOF
           cc -std=c11 -Wall -Wextra -Werror -I. /tmp/odi_check.c -o /tmp/odi_check
           /tmp/odi_check
