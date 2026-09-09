@@ -39,6 +39,10 @@ typedef struct {
 } odrv_header_v1;
 #pragma pack(pop)
 
+#if defined(__cplusplus)
+static_assert(sizeof(odrv_header_v1) == 128, "ODRV v1 header must be 128 bytes");
+#else
 _Static_assert(sizeof(odrv_header_v1) == 128, "ODRV v1 header must be 128 bytes");
+#endif
 
 #endif
