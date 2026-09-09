@@ -178,6 +178,13 @@ typedef struct odi_driver_descriptor {
 #define ODI_API_HAS(api,member) ((api)->struct_size >= offsetof(odi_kernel_api,member) + sizeof((api)->member))
 #define ODI_DRIVER_HAS(desc,member) ((desc)->struct_size >= offsetof(odi_driver_descriptor,member) + sizeof((desc)->member))
 #define ODI_DRIVER_ENTRY_SYMBOL odi_driver_entry
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 const odi_driver_descriptor *odi_driver_entry(void);
+#ifdef __cplusplus
+}
+#endif
 
 #endif
